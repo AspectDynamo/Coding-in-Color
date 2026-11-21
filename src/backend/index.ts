@@ -76,6 +76,8 @@ app.onError((err, c) => {
   return c.json(envelope('internal', 'Something went wrong.'), 500);
 });
 
+export { DemoStore } from './repositories/demo-store-do';
+
 export default {
   async fetch(
     request: Request,

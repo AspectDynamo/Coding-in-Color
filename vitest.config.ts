@@ -5,6 +5,8 @@ import { fileURLToPath, URL } from 'node:url';
 // Vitest does NOT load the Cloudflare Vite plugin: unit/integration tests run in plain Node,
 // and Worker code is exercised through Hono's app.request() instead of workerd.
 const alias = {
+  // workerd-only module; tests run in Node, so provide a minimal stand-in.
+  'cloudflare:workers': fileURLToPath(new URL('./tests/setup/cloudflare-workers.ts', import.meta.url)),
   '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
   '@frontend': fileURLToPath(new URL('./src/frontend', import.meta.url)),
   '@backend': fileURLToPath(new URL('./src/backend', import.meta.url)),

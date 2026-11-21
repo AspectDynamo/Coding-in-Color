@@ -44,6 +44,7 @@ import type {
 } from '@shared/types';
 import type { AppConfig } from '../config';
 import { generateDemoDataset } from '../demo/generate';
+import { demoUuid } from '../demo/prng';
 import type { DemoDataset } from '../demo/types';
 import { hashAccessCode, normalizeAccessCode } from '../services/credentials';
 import { StoreError } from '../utils/errors';
@@ -103,7 +104,8 @@ export class MemoryStore implements DataStore {
       const normalized = normalizeAccessCode(dc.code);
       if (!normalized) continue;
       store.credentials.push({
-        id: uuid(),
+        // Deterministic for seeded students so sessions survive a Durable Object restart.
+        id: demoUuid('credential', dc.studentId),
         student_id: dc.studentId,
         credential_hash: await hashAccessCode(normalized, pepper),
         key_version: keyVersion,

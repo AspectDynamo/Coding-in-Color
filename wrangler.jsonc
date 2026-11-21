@@ -51,6 +51,13 @@
       "simple": { "limit": 5, "period": 60 },
     },
   ],
+  // Demo only: one Durable Object holds the shared in-memory demo store so every isolate sees the
+  // same data. SQLite-backed class (required on the free plan). Not repeated under env.production:
+  // production must use Supabase, never the memory store.
+  "durable_objects": {
+    "bindings": [{ "name": "DEMO_STORE", "class_name": "DemoStore" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DemoStore"] }],
   "vars": {
     // "development" | "production". Drives strict-mode checks and logging.
     "APP_ENV": "development",

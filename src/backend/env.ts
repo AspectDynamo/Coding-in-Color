@@ -4,6 +4,7 @@
  * the backend reads everything through this loose `Bindings` shape.
  */
 import type { AppConfig } from './config';
+import type { DemoStoreNamespace } from './repositories/demo-store-proxy';
 import type { DataStore } from './repositories/types';
 import type { StaffRole, Permission, AgeBand, StudentStatus } from '@shared/types';
 
@@ -19,6 +20,8 @@ export interface Bindings {
   STUDENT_LOGIN_LIMITER?: RateLimitBinding;
   STAFF_LOGIN_LIMITER?: RateLimitBinding;
   AI_LIMITER?: RateLimitBinding;
+  /** Durable Object namespace hosting the shared demo MemoryStore (demo config only). */
+  DEMO_STORE?: DemoStoreNamespace;
   APP_ENV?: string;
   DEMO_MODE?: string;
   ALLOW_PUBLIC_DEMO?: string;
