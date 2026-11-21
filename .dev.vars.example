@@ -1,0 +1,22 @@
+# Copy to .dev.vars (or run `npm run setup`). Local Worker secrets. NEVER commit real values.
+# Placeholders only.
+
+# Signs session cookies. Generate: node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+SESSION_SECRET=replace-with-32-byte-base64url
+
+# Pepper mixed into credential hashing / encryption. Same generation as above.
+CREDENTIAL_PEPPER=replace-with-32-byte-base64url
+
+# Optional, rotation only: the pepper you are rotating away from. Leave blank normally. Student sign-in also
+# tries it for credentials whose key_version is lower than CREDENTIAL_KEY_VERSION (a wrangler var; bump it
+# when you change CREDENTIAL_PEPPER). Remove once old cards are reissued.
+CREDENTIAL_PEPPER_PREVIOUS=
+
+# Supabase project URL, e.g. https://<project-ref>.supabase.co. Leave blank = in-memory synthetic demo store.
+SUPABASE_URL=
+
+# Supabase publishable/anon key. Safe for the browser but still kept out of git. Blank = demo store.
+SUPABASE_ANON_KEY=
+
+# Supabase service-role key. Server-only, bypasses RLS. Never expose to the frontend. Blank = demo store.
+SUPABASE_SERVICE_ROLE_KEY=

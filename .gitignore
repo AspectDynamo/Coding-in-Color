@@ -1,0 +1,16 @@
+node_modules
+dist
+.wrangler
+.dev.vars
+.env
+playwright-report
+test-results
+blob-report
+coverage
+*.log
+
+# Generated seed (contains hashes derived from the local pepper)
+supabase/seed.sql
+
+# Screenshot tool output (npm run shots)
+screenshots/

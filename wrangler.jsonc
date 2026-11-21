@@ -1,0 +1,130 @@
+{
+  // Schema for editor autocompletion
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // One Worker serves both the Hono API (src/backend) and the React SPA (static assets).
+  "name": "cic-impact",
+  "main": "src/backend/index.ts",
+  // Pinned to a date the installed wrangler/workerd accepts. Bump deliberately.
+  "compatibility_date": "2026-11-21",
+  // nodejs_compat gives Node built-ins (crypto, Buffer) used by the auth/credential code.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    // Serve the built SPA; unknown non-file paths fall back to index.html for client routing.
+    "not_found_handling": "single-page-application",
+    // Expose assets to the Worker as env.ASSETS (used only if the Worker needs to serve files).
+    "binding": "ASSETS",
+    // Only /api/* requests invoke the Worker; everything else is served straight from assets.
+    "run_worker_first": ["/api/*"],
+  },
+  "observability": {
+    "enabled": true,
+    // Workers Logs invocation logs record the Request/Response and metadata (incl. full URL) per call.
+    // The app writes its own redacted, path-only access log, so the platform ones are disabled.
+    "logs": { "invocation_logs": false },
+  },
+  // Workers AI binding: env.AI. It has no local simulator, so `vite dev` needs the plugin's
+  // remoteBindings: false (vite.config.ts) to start without `wrangler login`. AI calls therefore
+  // fail locally; tests should stub env.AI.
+  "ai": {
+    "binding": "AI",
+  },
+  // Rate limiters (simple: limit per period in seconds; period must be 10 or 60).
+  // namespace_id must be unique per account; string-encoded positive integers.
+  "ratelimits": [
+    {
+      // 60 student code redemptions per 60s per IP. A whole classroom often shares one NAT IP,
+      // so this must exceed class size; 80-bit codes keep online guessing infeasible at this rate.
+      "name": "STUDENT_LOGIN_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 60, "period": 60 },
+    },
+    {
+      // 10 staff login attempts per 60s per location
+      "name": "STAFF_LOGIN_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 10, "period": 60 },
+    },
+    {
+      // 5 AI generation calls per 60s per staff member (cost control; keyed by staff id, not IP)
+      "name": "AI_LIMITER",
+      "namespace_id": "1003",
+      "simple": { "limit": 5, "period": 60 },
+    },
+  ],
+  "vars": {
+    // "development" | "production". Drives strict-mode checks and logging.
+    "APP_ENV": "development",
+    // Enables synthetic demo data paths. Must be "false" in real deployments.
+    "DEMO_MODE": "true",
+    // Workers AI model id; must support JSON mode (response_format json_schema).
+    "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    // Minimum cohort size before aggregate analytics are shown (small-cell suppression).
+    "SUPPRESSION_THRESHOLD": "10",
+    // Under-13 registration is off; COPPA-sensitive flow must be enabled deliberately.
+    "ALLOW_UNDER_13_REGISTRATION": "false",
+    // Require MFA for admin accounts when true (off in demo). Defaults to true when APP_ENV=production.
+    "REQUIRE_ADMIN_MFA": "false",
+    // Production safety: a production deploy with no Supabase data store refuses to serve the
+    // synthetic memory store unless DEMO_MODE=true AND ALLOW_PUBLIC_DEMO=true (a deliberately public
+    // synthetic demo). Keep "false" here; the top-level config is the local/demo default only.
+    "ALLOW_PUBLIC_DEMO": "false",
+    // Version of the credential encryption key; bump when rotating CREDENTIAL_PEPPER-derived keys.
+    "CREDENTIAL_KEY_VERSION": "1",
+    // Comma-separated extra CORS origins. Empty = same-origin only.
+    "ALLOWED_ORIGINS": "",
+  },
+  // Production environment. Selected at build time: `CLOUDFLARE_ENV=production vite build`
+  // (see `npm run deploy:production`). Wrangler's `wrangler deploy` then uses the generated config.
+  // Environments are NOT inherited for vars or bindings (ai, ratelimits, kv, ...): they must be
+  // repeated here. main, compatibility_date/flags, assets and observability ARE inheritable, but
+  // are repeated for clarity. The deployed Worker is named "cic-impact-production".
+  // Secrets (SESSION_SECRET, CREDENTIAL_PEPPER, SUPABASE_*) are set per Worker with
+  // `wrangler secret put <NAME> --env production`.
+  "env": {
+    "production": {
+      "compatibility_date": "2026-11-21",
+      "compatibility_flags": ["nodejs_compat"],
+      "assets": {
+        "not_found_handling": "single-page-application",
+        "binding": "ASSETS",
+        "run_worker_first": ["/api/*"],
+      },
+      // Invocation logs are off: they record request URL/metadata for every call, which we do not
+      // need (the app writes its own redacted, path-only access log via src/backend/utils/logger.ts).
+      "observability": {
+        "enabled": true,
+        "logs": { "invocation_logs": false },
+      },
+      "ai": { "binding": "AI" },
+      // Separate namespace ids so production counters never share state with the demo Worker.
+      "ratelimits": [
+        {
+          "name": "STUDENT_LOGIN_LIMITER",
+          "namespace_id": "2001",
+          "simple": { "limit": 60, "period": 60 },
+        },
+        {
+          "name": "STAFF_LOGIN_LIMITER",
+          "namespace_id": "2002",
+          "simple": { "limit": 10, "period": 60 },
+        },
+        {
+          "name": "AI_LIMITER",
+          "namespace_id": "2003",
+          "simple": { "limit": 5, "period": 60 },
+        },
+      ],
+      "vars": {
+        "APP_ENV": "production",
+        "DEMO_MODE": "false",
+        "ALLOW_PUBLIC_DEMO": "false",
+        "REQUIRE_ADMIN_MFA": "true",
+        "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "SUPPRESSION_THRESHOLD": "10",
+        "ALLOW_UNDER_13_REGISTRATION": "false",
+        "CREDENTIAL_KEY_VERSION": "1",
+        "ALLOWED_ORIGINS": "",
+      },
+    },
+  },
+}
